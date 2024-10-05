@@ -1,4 +1,4 @@
-package nus.iss.se.team9.admin_service_team9;
+package nus.iss.se.team9.admin_service_team9.contoller;
 import nus.iss.se.team9.admin_service_team9.service.*;
 import nus.iss.se.team9.admin_service_team9.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
