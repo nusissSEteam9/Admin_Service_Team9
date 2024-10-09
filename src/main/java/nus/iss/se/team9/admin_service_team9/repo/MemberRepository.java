@@ -7,6 +7,4 @@ import java.util.List;
 
 public interface MemberRepository extends JpaRepository<Member,Integer>{
 	List<Member> findByMemberStatusNot(Status status);
-
-	Member findByUsername(String username);
 }
