@@ -29,15 +29,7 @@ public class Member extends User{
 	private Status memberStatus;
 	
 	@ElementCollection
-	private List<String> prefenceList;
-	
-	public List<String> getPerfenceList() {
-		return prefenceList;
-	}
-
-	public void setPrefenceList(List<String> prefenceList) {
-		this.prefenceList = prefenceList;
-	}
+	private List<String> preferenceList;
 	
 	@OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
 	private List<ShoppingListItem> shoppingList;
