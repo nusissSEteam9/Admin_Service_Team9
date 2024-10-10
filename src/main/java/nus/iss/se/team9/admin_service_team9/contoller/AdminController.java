@@ -23,6 +23,17 @@ public class AdminController {
         this.reportService = reportService;
     }
 
+    @GetMapping("/getAdminList")
+    public ResponseEntity<List<Admin>> getAdminList() {
+        try {
+            List<Admin> admins = adminService.getAllAdmin();
+            return ResponseEntity.ok(admins);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
+
     @GetMapping("/getDashboard")
     public ResponseEntity<Map<String, Object>> getDashboard() {
         System.out.println("Hi admin!");

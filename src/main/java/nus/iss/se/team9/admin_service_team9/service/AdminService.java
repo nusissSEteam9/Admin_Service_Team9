@@ -2,6 +2,7 @@ package nus.iss.se.team9.admin_service_team9.service;
 
 import jakarta.transaction.Transactional;
 import nus.iss.se.team9.admin_service_team9.model.*;
+import nus.iss.se.team9.admin_service_team9.repo.AdminRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -10,27 +11,35 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+
 @Service
 @Transactional
 public class AdminService {
 
+    private final AdminRepository adminRepository;
     private final RestTemplate restTemplate;
     private final RecipeService recipeService;
     private final ReportService reportService;
     private final UserService userService;
     private final String emailServiceUrl;
-
     @Autowired
     public AdminService(RestTemplate restTemplate,
                         RecipeService recipeService,
                         ReportService reportService,
                         UserService userService,
+                        AdminRepository adminRepository,
                         @Value("${email.service.url}") String emailServiceUrl) {
         this.restTemplate = restTemplate;
         this.userService = userService;
         this.recipeService = recipeService;
         this.reportService = reportService;
         this.emailServiceUrl = emailServiceUrl;
+        this.adminRepository = adminRepository;
+    }
+
+    public List<Admin> getAllAdmin(){
+        return adminRepository.findAll();
     }
 
     public void approveRecipeReport(Integer reportId) {
