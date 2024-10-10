@@ -16,16 +16,18 @@ import java.util.List;
 @Service
 @Transactional
 public class RecipeService {
-
+    private final RestTemplate restTemplate;
+    private final String recipeServiceUrl;
     @Autowired
-    private RestTemplate restTemplate;
-    @Value("${recipe.service.url}")
-    private String recipeServiceUrl;
+    public RecipeService(RestTemplate restTemplate, @Value("${recipe.service.url}") String recipeServiceUrl) {
+        this.restTemplate = restTemplate;
+        this.recipeServiceUrl = recipeServiceUrl;
+    }
 
     public List<Recipe> getAllRecipesByYear(int year) {
         String url = recipeServiceUrl +"/count-by-year/" + year;
         ResponseEntity<List<Recipe>> response = restTemplate.exchange(
-                url, HttpMethod.GET, null, new ParameterizedTypeReference<List<Recipe>>() {});
+                url, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
         return response.getBody();
     }
 
@@ -33,7 +35,7 @@ public class RecipeService {
         String url = recipeServiceUrl + "/count-by-tag";
         System.out.println("go to recipe-api");
         ResponseEntity<List<Object[]>> response = restTemplate.exchange(
-                url, HttpMethod.GET, null, new ParameterizedTypeReference<List<Object[]>>() {});
+                url, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
         return response.getBody();
     }
 
@@ -41,7 +43,7 @@ public class RecipeService {
         String url = recipeServiceUrl + String.format("?orderBy=%s&order=%s", orderBy, order);
         System.out.println("go to recipe-api");
         ResponseEntity<List<Recipe>> response = restTemplate.exchange(
-                url, HttpMethod.GET, null, new ParameterizedTypeReference<List<Recipe>>() {});
+                url, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
         return response.getBody();
     }
 
@@ -52,15 +54,12 @@ public class RecipeService {
 
         HttpEntity<Integer> requestEntity = new HttpEntity<>(memberId, headers);
 
-        // 使用 RestTemplate 调用 DELETE 请求
         ResponseEntity<Void> response = restTemplate.exchange(
                 url,
                 HttpMethod.DELETE,
                 requestEntity,
                 Void.class
         );
-
-        // 检查响应的状态码并返回适当的 ResponseEntity
         if (response.getStatusCode().is2xxSuccessful()) {
             return ResponseEntity.ok("Recipes deleted successfully");
         } else {
@@ -69,10 +68,17 @@ public class RecipeService {
         }
     }
 
-
-    public void deleteRecipe(Integer id){
-        String url = recipeServiceUrl +"/set-recipe-to-deleted/" + id;
-        ResponseEntity<List<Recipe>> response = restTemplate.exchange(
-                url, HttpMethod.DELETE, null, new ParameterizedTypeReference<List<Recipe>>() {});
+    public void deleteRecipe(Integer id) {
+        String url = recipeServiceUrl + "/" + id;
+        ResponseEntity<Void> response = restTemplate.exchange(
+                url, HttpMethod.DELETE, null, Void.class);
+        if (response.getStatusCode() == HttpStatus.NO_CONTENT) {
+            System.out.println("Recipe deleted successfully");
+        } else if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
+            System.out.println("Recipe not found");
+        } else {
+            System.out.println("Error occurred: " + response.getStatusCode());
+        }
     }
+
 }

@@ -18,10 +18,15 @@ import java.util.List;
 @RestController
 @RequestMapping("/admin/csv")
 public class CsvController {
+
+    private final RecipeService recipeService;
+    private final CsvService csvService;
+
     @Autowired
-    private RecipeService recipeService;
-    @Autowired
-    private CsvService csvService;
+    public CsvController(RecipeService recipeService, CsvService csvService) {
+        this.recipeService = recipeService;
+        this.csvService = csvService;
+    }
 
     @GetMapping("/download/{orderBy}/{order}")
     public void downloadCsv(HttpServletResponse response, @PathVariable String orderBy, @PathVariable String order) {
@@ -36,7 +41,7 @@ public class CsvController {
             response.flushBuffer();
             fileInputStream.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             // 处理异常
         }
     }

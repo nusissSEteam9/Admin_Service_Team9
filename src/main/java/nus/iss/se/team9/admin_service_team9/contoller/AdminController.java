@@ -16,7 +16,7 @@ public class AdminController {
     private final ReportService reportService;
 
     @Autowired
-    public AdminController(RecipeService recipeService, UserService userService, AdminService adminService,ReportService reportService) {
+    public AdminController(RecipeService recipeService, UserService userService, AdminService adminService, ReportService reportService) {
         this.recipeService = recipeService;
         this.userService = userService;
         this.adminService = adminService;
@@ -136,15 +136,16 @@ public class AdminController {
         List<RecipeReport> pendingReports = reportService.getAllPendingRecipeReports();
         return ResponseEntity.ok(pendingReports);
     }
+
     @GetMapping("/getAllPendingMemberReports")
     public ResponseEntity<List<MemberReport>> showPendingMemberReports() {
         List<MemberReport> pendingReports = reportService.getAllPendingMemberReports();
         return ResponseEntity.ok(pendingReports);
     }
 
-    @GetMapping("/recipeReport/{id}")
+    @GetMapping("/getRecipeReport/{id}")
     public ResponseEntity<?> showRecipeReportDetails(@PathVariable(value = "id") Integer id) {
-        RecipeReport report = adminService.getRecipeReportById(id);
+        RecipeReport report = reportService.getRecipeReportById(id);
         if (report == null) {
             return ResponseEntity.status(404).body("Recipe report not found.");
         }
@@ -154,9 +155,18 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/recipeReport/{id}/approve")
+    @GetMapping("/getMemberReport/{id}")
+    public ResponseEntity<?> showMemberReportDetails(@PathVariable(value = "id") Integer id) {
+        MemberReport report = reportService.getMemberReportById(id);
+        if (report == null) {
+            return ResponseEntity.status(404).body("Member report not found.");
+        }
+        return ResponseEntity.ok(report);
+    }
+
+    @PostMapping("/approveRecipeReport/{id}")
     public ResponseEntity<String> approveRecipeReport(@PathVariable(value = "id") Integer id) {
-        RecipeReport report = adminService.getRecipeReportById(id);
+        RecipeReport report = reportService.getRecipeReportById(id);
         if (report == null) {
             return ResponseEntity.status(404).body("Recipe report not found.");
         }
@@ -164,10 +174,9 @@ public class AdminController {
         return ResponseEntity.ok("Recipe report approved successfully.");
     }
 
-    @PostMapping("/recipeReport/{id}/reject")
+    @PostMapping("/rejectRecipeReport/{id}")
     public ResponseEntity<String> rejectRecipeReport(@PathVariable(value = "id") Integer id) {
-        // 检查报告是否存在
-        RecipeReport report = adminService.getRecipeReportById(id);
+        RecipeReport report = reportService.getRecipeReportById(id);
         if (report == null) {
             return ResponseEntity.status(404).body("Recipe report not found.");
         }
@@ -175,18 +184,9 @@ public class AdminController {
         return ResponseEntity.ok("Recipe report rejected successfully.");
     }
 
-    @GetMapping("/memberReport/{id}")
-    public ResponseEntity<?> showMemberReportDetails(@PathVariable(value = "id") Integer id) {
-        MemberReport report = adminService.getMemberReportById(id);
-        if (report == null) {
-            return ResponseEntity.status(404).body("Member report not found.");
-        }
-        return ResponseEntity.ok(report);
-    }
-
-    @PostMapping("/memberReport/{id}/approve")
+    @PostMapping("/approveMemberReport/{id}")
     public ResponseEntity<String> approveMemberReport(@PathVariable(value = "id") Integer id) {
-        MemberReport report = adminService.getMemberReportById(id);
+        MemberReport report = reportService.getMemberReportById(id);
         if (report == null) {
             return ResponseEntity.status(404).body("Member report not found.");
         }
@@ -194,10 +194,9 @@ public class AdminController {
         return ResponseEntity.ok("Member report approved successfully.");
     }
 
-
-    @PostMapping("/memberReport/{id}/reject")
+    @PostMapping("/rejectMemberReport/{id}")
     public ResponseEntity<String> rejectMemberReport(@PathVariable(value = "id") Integer id) {
-        MemberReport report = adminService.getMemberReportById(id);
+        MemberReport report = reportService.getMemberReportById(id);
         if (report == null) {
             return ResponseEntity.status(404).body("Member report not found.");
         }

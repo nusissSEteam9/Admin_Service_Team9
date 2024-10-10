@@ -12,7 +12,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
-
 @Service
 public class UserService {
 
@@ -57,7 +56,6 @@ public class UserService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + e.getMessage());
         }
     }
-
 
     public List<Member> getAllMembers() {
         String url = userServiceUrl + "/getAllMembersNotDeleted";

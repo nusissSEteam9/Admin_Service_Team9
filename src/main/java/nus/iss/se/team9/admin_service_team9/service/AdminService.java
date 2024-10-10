@@ -2,42 +2,42 @@ package nus.iss.se.team9.admin_service_team9.service;
 
 import jakarta.transaction.Transactional;
 import nus.iss.se.team9.admin_service_team9.model.*;
-import nus.iss.se.team9.admin_service_team9.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional
 public class AdminService {
-    @Value("${email.service.url}")
-    private String emailServiceUrl;
-    @Autowired
-    private MemberRepository memberRepository;
-    @Autowired
-    private RecipeReportRepository recipeReportRepository;
-    @Autowired
-    private MemberReportRepository memberReportRepository;
-    @Autowired
-    private RecipeService recipeService;
 
-    // Pending RecipeReportList Operation
-    public List<RecipeReport> getPendingRecipeReport() {
-        return recipeReportRepository.findByStatus(Status.PENDING);
-    }
+    private final RestTemplate restTemplate;
+    private final RecipeService recipeService;
+    private final ReportService reportService;
+    private final UserService userService;
+    private final String emailServiceUrl;
 
-    public RecipeReport getRecipeReportById(Integer id) {
-        Optional<RecipeReport> report = recipeReportRepository.findById(id);
-        return report.orElse(null);
+    @Autowired
+    public AdminService(RestTemplate restTemplate,
+                        RecipeService recipeService,
+                        ReportService reportService,
+                        UserService userService,
+                        @Value("${email.service.url}") String emailServiceUrl) {
+        this.restTemplate = restTemplate;
+        this.userService = userService;
+        this.recipeService = recipeService;
+        this.reportService = reportService;
+        this.emailServiceUrl = emailServiceUrl;
     }
 
     public void approveRecipeReport(Integer reportId) {
-        RecipeReport recipeReport = recipeReportRepository.findById(reportId).orElse(null);
+        // get report
+        RecipeReport recipeReport = reportService.getRecipeReportById(reportId);
+
+        // generate email and send
         EmailDetails emailDetails = new EmailDetails();
         assert recipeReport != null;
         emailDetails.setTo(recipeReport.getRecipeReported().getMember().getEmail());
@@ -45,28 +45,45 @@ public class AdminService {
         emailDetails.setBody("Dear member " + recipeReport.getMember().getUsername() + ",\n" + "Your recipe "+recipeReport.getRecipeReported()+" has been deleted!\n"
                 + "Please contact us if any question!");
         sendEmail(emailDetails);
+
+        //delete recipe
         Recipe recipe = recipeReport.getRecipeReported();
-        recipeService.deleteRecipe(recipe.getId());
-        recipeReport.setStatus(Status.APPROVED);
-        recipeReportRepository.save(recipeReport);
+        try {
+            recipeService.deleteRecipe(recipe.getId());
+            System.out.println("Recipe with ID " + recipe.getId() + " deleted successfully.");
+        } catch (Exception e) {
+            System.out.println("An error occurred while trying to delete the recipe: " + e.getMessage());
+        }
+
+        //approve report
+        try {
+            reportService.approveRecipeReportById(reportId);
+            System.out.println("Recipe report approved successfully.");
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            System.out.println("Error occurred during approval: " + e.getStatusCode());
+            System.out.println("Error body: " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            System.out.println("An unexpected error occurred during report approval.");
+        }
     }
+
     public void rejectRecipeReport(Integer reportId) {
-        RecipeReport recipeReport = recipeReportRepository.findById(reportId).orElse(null);
-        assert recipeReport != null;
-        recipeReport.setStatus(Status.REJECTED);
-    }
-
-    public List<MemberReport> getPendingMemberReport() {
-        return memberReportRepository.findByStatus(Status.PENDING);
-
-    }
-    public MemberReport getMemberReportById(Integer id) {
-        Optional<MemberReport> report = memberReportRepository.findById(id);
-        return report.orElse(null);
+        try {
+            reportService.rejectRecipeReportById(reportId);
+            System.out.println("Recipe report rejected successfully.");
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            System.out.println("Error occurred during rejecting: " + e.getStatusCode());
+            System.out.println("Error body: " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            System.out.println("An unexpected error occurred during report rejecting.");
+        }
     }
 
     public void approveMemberReport(Integer reportId) {
-        MemberReport memberReport = memberReportRepository.findById(reportId).orElse(null);
+        // get report
+        MemberReport memberReport = reportService.getMemberReportById(reportId);
+
+        // generate email and send
         EmailDetails emailDetails = new EmailDetails();
         assert memberReport != null;
         emailDetails.setTo(memberReport.getMemberReported().getEmail());
@@ -76,26 +93,59 @@ public class AdminService {
                 + "Please contact us if any questions!");
         sendEmail(emailDetails);
 
+        //delete member
         Member member = memberReport.getMemberReported();
-        member.setMemberStatus(Status.DELETED);
-        memberReport.setStatus(Status.APPROVED);
-        memberRepository.save(member);
-        memberReportRepository.save(memberReport);
+        try {
+            userService.deleteMember(member.getId());
+            System.out.println("Member with ID " + member.getId() + " deleted successfully.");
+        } catch (Exception e) {
+            System.out.println("An error occurred while trying to delete the member: " + e.getMessage());
+        }
+
+        //approve report
+        try {
+            reportService.approveMemberReportById(reportId);
+            System.out.println("Recipe report approved successfully.");
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            System.out.println("Error occurred during approval: " + e.getStatusCode());
+            System.out.println("Error body: " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            System.out.println("An unexpected error occurred during report approval.");
+        }
     }
 
     public void rejectMemberReport(Integer reportId) {
-        MemberReport memberReport = memberReportRepository.findById(reportId).orElse(null);
-        assert memberReport != null;
-        memberReport.setStatus(Status.REJECTED);
+        try {
+            reportService.rejectMemberReportById(reportId);
+            System.out.println("Member report rejected successfully.");
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            System.out.println("Error occurred during rejecting: " + e.getStatusCode());
+            System.out.println("Error body: " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            System.out.println("An unexpected error occurred during report rejecting.");
+        }
     }
 
-    public void sendEmail(EmailDetails emailDetails){
-        RestTemplate restTemplate = new RestTemplate();
+    public void sendEmail(EmailDetails emailDetails) {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Content-Type", "application/json");
+        headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<EmailDetails> request = new HttpEntity<>(emailDetails, headers);
         String url = emailServiceUrl + "/sendEmailOTP";
-        ResponseEntity<String> emailResponse = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+
+            if (response.getStatusCode() == HttpStatus.OK) {
+                System.out.println("Email sent successfully.");
+            } else {
+                System.out.println("Failed to send email. Status code: " + response.getStatusCode());
+            }
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            System.out.println("Error response from server: " + e.getStatusCode());
+            System.out.println("Error body: " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
+
 }
 
