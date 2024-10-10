@@ -26,10 +26,6 @@ public class AdminService {
     @Autowired
     private RecipeService recipeService;
 
-    public List<MemberReport> getReportsByMember(Member member) {
-        return memberReportRepository.findByMemberReportedAndStatus(member, Status.APPROVED);
-    }
-
     // Pending RecipeReportList Operation
     public List<RecipeReport> getPendingRecipeReport() {
         return recipeReportRepository.findByStatus(Status.PENDING);

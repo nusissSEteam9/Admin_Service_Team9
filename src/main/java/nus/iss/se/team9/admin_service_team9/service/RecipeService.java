@@ -2,19 +2,16 @@ package nus.iss.se.team9.admin_service_team9.service;
 
 import jakarta.transaction.Transactional;
 import nus.iss.se.team9.admin_service_team9.model.*;
-import nus.iss.se.team9.admin_service_team9.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.List;
+
 
 @Service
 @Transactional
@@ -47,11 +44,31 @@ public class RecipeService {
                 url, HttpMethod.GET, null, new ParameterizedTypeReference<List<Recipe>>() {});
         return response.getBody();
     }
-    public void deleteMemberRecipes(Member member) {
+
+    public ResponseEntity<String> deleteRecipesByMemberId(Integer memberId) {
         String url = recipeServiceUrl + "/delete-by-member";
-        HttpEntity<Member> request = new HttpEntity<>(member);
-        restTemplate.exchange(url, HttpMethod.DELETE, request, Void.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Content-Type", "application/json");
+
+        HttpEntity<Integer> requestEntity = new HttpEntity<>(memberId, headers);
+
+        // 使用 RestTemplate 调用 DELETE 请求
+        ResponseEntity<Void> response = restTemplate.exchange(
+                url,
+                HttpMethod.DELETE,
+                requestEntity,
+                Void.class
+        );
+
+        // 检查响应的状态码并返回适当的 ResponseEntity
+        if (response.getStatusCode().is2xxSuccessful()) {
+            return ResponseEntity.ok("Recipes deleted successfully");
+        } else {
+            return ResponseEntity.status(response.getStatusCode())
+                    .body("Failed to delete recipes");
+        }
     }
+
 
     public void deleteRecipe(Integer id){
         String url = recipeServiceUrl +"/set-recipe-to-deleted/" + id;

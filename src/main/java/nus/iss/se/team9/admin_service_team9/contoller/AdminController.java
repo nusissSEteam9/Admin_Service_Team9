@@ -2,6 +2,7 @@ package nus.iss.se.team9.admin_service_team9.contoller;
 import nus.iss.se.team9.admin_service_team9.service.*;
 import nus.iss.se.team9.admin_service_team9.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,14 +10,20 @@ import java.util.*;
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
-    @Autowired
-    private RecipeService recipeService;
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private AdminService adminService;
+    private final RecipeService recipeService;
+    private final UserService userService;
+    private final AdminService adminService;
+    private final ReportService reportService;
 
-    @GetMapping("/dashboard")
+    @Autowired
+    public AdminController(RecipeService recipeService, UserService userService, AdminService adminService,ReportService reportService) {
+        this.recipeService = recipeService;
+        this.userService = userService;
+        this.adminService = adminService;
+        this.reportService = reportService;
+    }
+
+    @GetMapping("/getDashboard")
     public ResponseEntity<Map<String, Object>> getDashboard() {
         System.out.println("Hi admin!");
         Map<String, Object> response = new HashMap<>();
@@ -61,14 +68,14 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/memberManage")
+    @GetMapping("/getMemberList")
     public ResponseEntity<List<Member>> showMemberList() {
         List<Member> members = userService.getAllMembers();
         return ResponseEntity.ok(members);
     }
 
-    @PostMapping("/memberManage/search")
-    public ResponseEntity<?> showMemberById(@RequestParam("query") String query) {
+    @PostMapping("/getMemberList/searchById")
+    public ResponseEntity<?> getMemberById(@RequestParam("query") String query) {
         List<Member> members = new ArrayList<>();
         if (query.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Query cannot be empty.");
@@ -90,33 +97,48 @@ public class AdminController {
         return ResponseEntity.ok(members);
     }
 
-    @GetMapping("/memberManage/{id}/reports")
+    @GetMapping("/getReportsByIdOfMemberReported/{id}")
     public ResponseEntity<?> showMemberReports(@PathVariable("id") Integer memberId) {
         Member member = userService.getMemberById(memberId);
         if (member == null) {
             return ResponseEntity.status(404).body("Member not found.");
         }
-        List<MemberReport> memberReports = adminService.getReportsByMember(member);
+        List<MemberReport> memberReports = reportService.getReportsByMemberReported(member);
         Map<String, Object> response = new HashMap<>();
         response.put("member", member);
         response.put("memberReports", memberReports);
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/memberManage/delete/{id}")
+    @DeleteMapping("/deleteMemberById/{id}")
     public ResponseEntity<String> deleteMember(@PathVariable("id") Integer memberId) {
-        Member member = userService.getMemberById(memberId);
-        if (member == null) {
-            return ResponseEntity.status(404).body("Member not found.");
+        try {
+            ResponseEntity<String> userServiceResponse = userService.deleteMember(memberId);
+            if (userServiceResponse.getStatusCode() == HttpStatus.OK) {
+                ResponseEntity<String> recipeServiceResponse = recipeService.deleteRecipesByMemberId(memberId);
+                if (recipeServiceResponse.getStatusCode() == HttpStatus.OK) {
+                    return ResponseEntity.ok("Member and all recipes deleted successfully.");
+                } else {
+                    return ResponseEntity.status(recipeServiceResponse.getStatusCode())
+                            .body("Failed to delete member's recipes.");
+                }
+            }
+            else {
+                return ResponseEntity.status(userServiceResponse.getStatusCode()).body("Failed to delete member: " + userServiceResponse.getBody());
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
         }
-        userService.deleteMember(member);
-        recipeService.deleteMemberRecipes(member);
-        return ResponseEntity.ok("Member deleted successfully.");
     }
 
-    @GetMapping("/recipeReport")
+    @GetMapping("/getAllPendingRecipeReports")
     public ResponseEntity<List<RecipeReport>> showPendingRecipeReports() {
-        List<RecipeReport> pendingReports = adminService.getPendingRecipeReport();
+        List<RecipeReport> pendingReports = reportService.getAllPendingRecipeReports();
+        return ResponseEntity.ok(pendingReports);
+    }
+    @GetMapping("/getAllPendingMemberReports")
+    public ResponseEntity<List<MemberReport>> showPendingMemberReports() {
+        List<MemberReport> pendingReports = reportService.getAllPendingMemberReports();
         return ResponseEntity.ok(pendingReports);
     }
 
@@ -151,13 +173,6 @@ public class AdminController {
         }
         adminService.rejectRecipeReport(id);
         return ResponseEntity.ok("Recipe report rejected successfully.");
-    }
-
-    // show all reported members
-    @GetMapping("/memberReport")
-    public ResponseEntity<List<MemberReport>> showPendingMemberReports() {
-        List<MemberReport> pendingReports = adminService.getPendingMemberReport();
-        return ResponseEntity.ok(pendingReports);
     }
 
     @GetMapping("/memberReport/{id}")
