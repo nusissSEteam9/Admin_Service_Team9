@@ -20,43 +20,19 @@ public class AdminService {
     @Autowired
     private MemberRepository memberRepository;
     @Autowired
-    private RecipeRepository recipeRepository;
-    @Autowired
     private RecipeReportRepository recipeReportRepository;
     @Autowired
     private MemberReportRepository memberReportRepository;
-
-    public List<Member> getAllMembers() {
-        return memberRepository.findByMemberStatusNot(Status.DELETED);
-    }
-
-    // Searching and Filtering methods
-    public Member getMemberById(Integer id) {
-        Optional<Member> member = memberRepository.findById(id);
-        return member.orElse(null);
-    }
+    @Autowired
+    private RecipeService recipeService;
 
     public List<MemberReport> getReportsByMember(Member member) {
         return memberReportRepository.findByMemberReportedAndStatus(member, Status.APPROVED);
     }
-    // delete member and invalid the recipes he or she uploaded
-    public void deleteMember(Integer memberId) {
-        Optional<Member> optionalMember = memberRepository.findById(memberId);
-        if (optionalMember.isPresent()) {
-            Member member = optionalMember.get();
-            member.setMemberStatus(Status.DELETED);
-            memberRepository.save(member);
-            List<Recipe> recipes = member.getAddedRecipes();
-            for (Recipe recipe : recipes) {
-                recipe.setStatus(Status.DELETED);
-                recipeRepository.save(recipe);
-            }
-        }
-    }
+
     // Pending RecipeReportList Operation
     public List<RecipeReport> getPendingRecipeReport() {
-        List<RecipeReport> pendingReport = recipeReportRepository.findByStatus(Status.PENDING);
-        return pendingReport;
+        return recipeReportRepository.findByStatus(Status.PENDING);
     }
 
     public RecipeReport getRecipeReportById(Integer id) {
@@ -67,25 +43,26 @@ public class AdminService {
     public void approveRecipeReport(Integer reportId) {
         RecipeReport recipeReport = recipeReportRepository.findById(reportId).orElse(null);
         EmailDetails emailDetails = new EmailDetails();
+        assert recipeReport != null;
         emailDetails.setTo(recipeReport.getRecipeReported().getMember().getEmail());
         emailDetails.setSubject("Recipe Deleted! ");
         emailDetails.setBody("Dear member " + recipeReport.getMember().getUsername() + ",\n" + "Your recipe "+recipeReport.getRecipeReported()+" has been deleted!\n"
                 + "Please contact us if any question!");
         sendEmail(emailDetails);
         Recipe recipe = recipeReport.getRecipeReported();
-        recipe.setStatus(Status.DELETED);
+        recipeService.deleteRecipe(recipe.getId());
         recipeReport.setStatus(Status.APPROVED);
-        recipeRepository.save(recipe);
         recipeReportRepository.save(recipeReport);
     }
     public void rejectRecipeReport(Integer reportId) {
         RecipeReport recipeReport = recipeReportRepository.findById(reportId).orElse(null);
+        assert recipeReport != null;
         recipeReport.setStatus(Status.REJECTED);
     }
 
     public List<MemberReport> getPendingMemberReport() {
-        List<MemberReport> pendingReport = memberReportRepository.findByStatus(Status.PENDING);
-        return pendingReport;
+        return memberReportRepository.findByStatus(Status.PENDING);
+
     }
     public MemberReport getMemberReportById(Integer id) {
         Optional<MemberReport> report = memberReportRepository.findById(id);
@@ -95,6 +72,7 @@ public class AdminService {
     public void approveMemberReport(Integer reportId) {
         MemberReport memberReport = memberReportRepository.findById(reportId).orElse(null);
         EmailDetails emailDetails = new EmailDetails();
+        assert memberReport != null;
         emailDetails.setTo(memberReport.getMemberReported().getEmail());
         emailDetails.setSubject("Account Deleted！");
         emailDetails.setBody("Dear member " + memberReport.getMemberReported().getUsername() + ",\n"
@@ -111,6 +89,7 @@ public class AdminService {
 
     public void rejectMemberReport(Integer reportId) {
         MemberReport memberReport = memberReportRepository.findById(reportId).orElse(null);
+        assert memberReport != null;
         memberReport.setStatus(Status.REJECTED);
     }
 
@@ -119,7 +98,7 @@ public class AdminService {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
         HttpEntity<EmailDetails> request = new HttpEntity<>(emailDetails, headers);
-        String url = emailServiceUrl;
+        String url = emailServiceUrl + "/sendEmailOTP";
         ResponseEntity<String> emailResponse = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
     }
 }

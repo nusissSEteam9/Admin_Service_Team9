@@ -12,12 +12,14 @@ public class AdminController {
     @Autowired
     private RecipeService recipeService;
     @Autowired
+    private UserService userService;
+    @Autowired
     private AdminService adminService;
 
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> getDashboard() {
+        System.out.println("Hi admin!");
         Map<String, Object> response = new HashMap<>();
-
         int year = 2003;
         List<Recipe> recipesByYear = recipeService.getAllRecipesByYear(year);
         List<String> months = Arrays.asList("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
@@ -38,7 +40,8 @@ public class AdminController {
         for (int i = 0; i < tagCounts.size(); i++) {
             Object[] tagCount = tagCounts.get(i);
             String tag = (String) tagCount[0];
-            Long recipeCount = (Long) tagCount[1];
+            // Convert recipeCount to Long if necessary
+            Long recipeCount = ((Number) tagCount[1]).longValue();
 
             if (i < 10) {
                 tags.add(tag);
@@ -60,7 +63,7 @@ public class AdminController {
 
     @GetMapping("/memberManage")
     public ResponseEntity<List<Member>> showMemberList() {
-        List<Member> members = adminService.getAllMembers();
+        List<Member> members = userService.getAllMembers();
         return ResponseEntity.ok(members);
     }
 
@@ -72,7 +75,7 @@ public class AdminController {
         }
         try {
             int id = Integer.parseInt(query);
-            Member member = adminService.getMemberById(id);
+            Member member = userService.getMemberById(id);
             if (member != null) {
                 members.add(member);
             } else {
@@ -89,7 +92,7 @@ public class AdminController {
 
     @GetMapping("/memberManage/{id}/reports")
     public ResponseEntity<?> showMemberReports(@PathVariable("id") Integer memberId) {
-        Member member = adminService.getMemberById(memberId);
+        Member member = userService.getMemberById(memberId);
         if (member == null) {
             return ResponseEntity.status(404).body("Member not found.");
         }
@@ -102,11 +105,12 @@ public class AdminController {
 
     @DeleteMapping("/memberManage/delete/{id}")
     public ResponseEntity<String> deleteMember(@PathVariable("id") Integer memberId) {
-        Member member = adminService.getMemberById(memberId);
+        Member member = userService.getMemberById(memberId);
         if (member == null) {
             return ResponseEntity.status(404).body("Member not found.");
         }
-        adminService.deleteMember(memberId);
+        userService.deleteMember(member);
+        recipeService.deleteMemberRecipes(member);
         return ResponseEntity.ok("Member deleted successfully.");
     }
 
