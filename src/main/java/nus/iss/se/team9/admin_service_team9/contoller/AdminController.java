@@ -158,12 +158,13 @@ public class AdminController {
     @GetMapping("/getRecipeReport/{id}")
     public ResponseEntity<?> showRecipeReportDetails(@PathVariable(value = "id") Integer id) {
         RecipeReport report = reportService.getRecipeReportById(id);
+        Integer recipeReportedId = reportService.getRecipeIdByRecipeReportId(id);
         if (report == null) {
             return ResponseEntity.status(404).body("Recipe report not found.");
         }
         Map<String, Object> response = new HashMap<>();
         response.put("report", report);
-        response.put("recipe", report.getRecipeReported());
+        response.put("recipe", recipeService.getRecipeById(recipeReportedId));
         return ResponseEntity.ok(response);
     }
 
@@ -215,6 +216,5 @@ public class AdminController {
         adminService.rejectMemberReport(id);
         return ResponseEntity.ok("Member report rejected successfully.");
     }
-
 
 }

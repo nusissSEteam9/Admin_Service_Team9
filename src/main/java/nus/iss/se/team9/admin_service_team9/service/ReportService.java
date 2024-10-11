@@ -227,4 +227,31 @@ public class ReportService {
         }
     }
 
+    public Integer getRecipeIdByRecipeReportId(Integer reportId) {
+        String url = reportServiceUrl + "/getRecipeIdByRecipeReportId?id=" + reportId;
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+            ResponseEntity<Map<String, Integer>> response = restTemplate.exchange(
+                    url, HttpMethod.GET, requestEntity, new ParameterizedTypeReference<Map<String, Integer>>() {}
+            );
+            Map<String, Integer> responseBody = response.getBody();
+            if (responseBody != null && responseBody.containsKey("recipeReportedId")) {
+                return responseBody.get("recipeReportedId");
+            } else {
+                return null;
+            }
+
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            System.out.println("Error response from server: " + e.getStatusCode());
+            System.out.println("Error body: " + e.getResponseBodyAsString());
+            return null;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return null;
+        }
+    }
+
+
 }
