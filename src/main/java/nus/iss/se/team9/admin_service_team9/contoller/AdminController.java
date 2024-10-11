@@ -25,6 +25,7 @@ public class AdminController {
 
     @GetMapping("/getAdminList")
     public ResponseEntity<List<Admin>> getAdminList() {
+        System.out.println("Processing fetching all admins");
         try {
             List<Admin> admins = adminService.getAllAdmin();
             return ResponseEntity.ok(admins);
@@ -114,7 +115,7 @@ public class AdminController {
         if (member == null) {
             return ResponseEntity.status(404).body("Member not found.");
         }
-        List<MemberReport> memberReports = reportService.getReportsByMemberReported(member);
+        List<MemberReport> memberReports = reportService.getReportsByMemberReported(member.getId());
         Map<String, Object> response = new HashMap<>();
         response.put("member", member);
         response.put("memberReports", memberReports);

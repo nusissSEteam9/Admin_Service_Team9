@@ -1,6 +1,5 @@
 package nus.iss.se.team9.admin_service_team9.service;
 
-import nus.iss.se.team9.admin_service_team9.model.Member;
 import nus.iss.se.team9.admin_service_team9.model.MemberReport;
 import nus.iss.se.team9.admin_service_team9.model.RecipeReport;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +12,9 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ReportService {
@@ -25,16 +26,17 @@ public class ReportService {
         this.reportServiceUrl = reportServiceUrl;
     }
 
-    public List<MemberReport> getReportsByMemberReported(Member member) {
+    public List<MemberReport> getReportsByMemberReported(Integer memberId) {
         String url = reportServiceUrl + "/getMemberReportsByMemberReported";
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Member> requestEntity = new HttpEntity<>(member, headers);
+            Map<String, Integer> requestBody = new HashMap<>();
+            requestBody.put("memberId", memberId);
+            HttpEntity<Map<String, Integer>> requestEntity = new HttpEntity<>(requestBody, headers);
             ResponseEntity<List<MemberReport>> response = restTemplate.exchange(
                     url, HttpMethod.POST, requestEntity, new ParameterizedTypeReference<>() {}
             );
-
             return response.getBody();
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             System.out.println("Error response from server: " + e.getStatusCode());
@@ -45,6 +47,7 @@ public class ReportService {
             return new ArrayList<>();
         }
     }
+
 
     public List<RecipeReport> getAllPendingRecipeReports() {
         String url = reportServiceUrl + "/getAllRecipeReports";
