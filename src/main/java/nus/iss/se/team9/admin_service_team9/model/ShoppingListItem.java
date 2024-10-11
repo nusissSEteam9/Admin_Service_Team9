@@ -1,5 +1,6 @@
 package nus.iss.se.team9.admin_service_team9.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -7,12 +8,16 @@ public class ShoppingListItem {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
-	@ManyToOne
-	private Member member;
 	@Column
 	private String ingredientName;
+	@Column
 	private boolean isChecked;
-	
+
+
+	@ManyToOne
+//	@JsonBackReference(value = "member-shoppingList")
+	@JsonIgnore
+	private Member member;
 	public ShoppingListItem() {}
 	
 	public ShoppingListItem(Member member, String ingredientName) {
