@@ -115,7 +115,7 @@ public class AdminController {
         if (member == null) {
             return ResponseEntity.status(404).body("Member not found.");
         }
-        List<MemberReport> memberReports = reportService.getReportsByMemberReported(member.getId());
+        List<MemberReport> memberReports = reportService.getApprovedReportsByMemberReported(member.getId());
         Map<String, Object> response = new HashMap<>();
         response.put("member", member);
         response.put("memberReports", memberReports);

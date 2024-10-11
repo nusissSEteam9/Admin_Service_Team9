@@ -26,7 +26,7 @@ public class ReportService {
         this.reportServiceUrl = reportServiceUrl;
     }
 
-    public List<MemberReport> getReportsByMemberReported(Integer memberId) {
+    public List<MemberReport> getApprovedReportsByMemberReported(Integer memberId) {
         String url = reportServiceUrl + "/getMemberReportsByMemberReported";
         try {
             HttpHeaders headers = new HttpHeaders();
