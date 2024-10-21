@@ -23,6 +23,11 @@ public class AdminController {
         this.reportService = reportService;
     }
 
+    @GetMapping("/health")
+    public String checkHealth(){
+        return "API is connected";
+    }
+
     @GetMapping("/getAdminList")
     public ResponseEntity<List<Admin>> getAdminList() {
         System.out.println("Processing fetching all admins");
