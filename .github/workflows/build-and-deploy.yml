@@ -3,7 +3,7 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - master
+      - deploy
 
 jobs:
   # 构建并测试应用程序
@@ -18,7 +18,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle  # Gradle 缓存
+          cache: gradle
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v2
@@ -36,7 +36,6 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: ./gradlew clean build --no-daemon --info
 
-      # 将构建输出的 JAR 文件保存为 Artifact
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v3
         with:
@@ -51,7 +50,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # 创建目录并下载构建好的 JAR 文件 Artifact
       - name: Create directory for artifact
         run: mkdir -p application-jar
 
@@ -81,9 +79,13 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Build and push Docker image to ECR
+        env:
+          IMAGE_TAG: latest-AdminService
         run: |
           docker buildx build \
             --platform linux/arm64 \
             -f ./Dockerfile \
-            -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_NAME }}:latest-AdminService \
+            -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_NAME }}:admin-${{ github.sha }} \
             --push .
+
+
