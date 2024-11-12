@@ -1,7 +1,7 @@
 # 构建阶段
 FROM openjdk:21-jdk-slim AS builder
 
-# 安装必要的工具，包括 xargs（通过 findutils 包）
+# 安装必要的工具，包括 xargs（通过 findutils 包）1
 RUN apt-get update && apt-get install -y --no-install-recommends findutils && \
     rm -rf /var/lib/apt/lists/*  # 清理缓存减少镜像大小
 
